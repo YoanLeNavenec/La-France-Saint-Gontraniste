@@ -4,7 +4,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #fff;
+  background: 
+  radial-gradient(ellipse at center, rgba(139, 101, 45, 0.06) 0%, transparent 70%), #f4ecd8;
   gap: 24px;
 }
 

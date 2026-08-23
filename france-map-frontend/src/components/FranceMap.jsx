@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { latLng, divIcon } from 'leaflet'
-import { MapContainer, GeoJSON, Marker, Tooltip } from 'react-leaflet'
+import { MapContainer, GeoJSON, Marker, Tooltip, useMapEvents } from 'react-leaflet'
 import './FranceMap.css'
-import { useMapEvents } from 'react-leaflet'
 
 const purpleIcon = divIcon({
   className: 'shield-marker',
@@ -22,10 +21,15 @@ const selectedIcon = divIcon({
   iconAnchor: [19, 38],
 })
 
-function ZoomWatcher({ onZoomChange }) {
-  useMapEvents({
+function ZoomWatcher({ onZoomChange, onMapReady }) {
+  const map = useMapEvents({
     zoomend: (e) => onZoomChange(e.target.getZoom()),
   })
+
+  useEffect(() => {
+    onMapReady(map)
+  }, [map])
+
   return null
 }
 
@@ -33,8 +37,8 @@ function FranceMap() {
   const [cities, setCities] = useState([
     { id: 1, position: [43.6047, 1.4442], oldName: 'Toulouse', newName: 'Saint-Gontan de la Rôse', lore: '', image: '', departement: '31', tier: 'prefecture' },
     { id: 2, position: [45.7640, 4.8357], oldName: 'Lyon', newName: 'Saint-Gontran le Gastronome', lore: '', image: '', departement: '69', tier: 'prefecture' },
-    { id: 3, position: [47.0873, -1.2814], oldName: 'Clisson', newName: 'Saint-Ethis du Grand Métal', lore: '', image: '', departement: '44', tier:'small' },
-    { id: 4, position: [44.435, 2.515], oldName: 'Lieu_dit Montredon', newName:'Saint-Gontran sur Créneaux', lore: '', image: '', departement: '12', tier: 'small'},
+    { id: 3, position: [47.0873, -1.2814], oldName: 'Clisson', newName: 'Saint-Ethis du Grand Métal', lore: '', image: '', departement: '44', tier: 'small' },
+    { id: 4, position: [44.435, 2.515], oldName: 'Lieu_dit Montredon', newName: 'Saint-Gontran sur Créneaux', lore: '', image: '', departement: '12', tier: 'small' },
   ])
 
   const ZOOM_THRESHOLD = 7.5
@@ -46,6 +50,7 @@ function FranceMap() {
   const [departements, setDepartements] = useState(null)
   const [selectedCity, setSelectedCity] = useState(null)
 
+  const mapRef = useRef(null)
 
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/regions-version-simplifiee.geojson')
@@ -54,12 +59,18 @@ function FranceMap() {
   }, [])
 
   useEffect(() => {
-  fetch('https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements-version-simplifiee.geojson')
-    .then(res => res.json())
-    .then(data => setDepartements(data))
+    fetch('https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements-version-simplifiee.geojson')
+      .then(res => res.json())
+      .then(data => setDepartements(data))
   }, [])
 
   const franceBounds = [latLng(41.3, -5.0), latLng(51.1, 8.3)]
+
+  function flyToLayer(layer) {
+    layer.on('click', () => {
+      mapRef.current.flyToBounds(layer.getBounds(), { padding: [20, 20], duration: 1, maxZoom: 9 })
+    })
+  }
 
   return (
     <div className='map-page'>
@@ -68,30 +79,36 @@ function FranceMap() {
           zoom: {currentZoom}
         </div>
         <MapContainer className='map-container' bounds={franceBounds} zoomSnap={0.1} minZoom={6} maxZoom={12} maxBounds={franceBounds}>
-          <ZoomWatcher onZoomChange={(zoom) => {
-            setCurrentZoom(zoom)
-            currentZoomRef.current = zoom
-          }}/>
+          <ZoomWatcher
+            onZoomChange={(zoom) => {
+              setCurrentZoom(zoom)
+              currentZoomRef.current = zoom
+            }}
+            onMapReady={(map) => { mapRef.current = map }}
+          />
           {regions && (
             <GeoJSON
               data={regions}
               style={{ color: '#6b46c1', weight: 1, fillColor: '#ffffff', fillOpacity: regionBaseOpacity }}
+              interactive={currentZoom < ZOOM_THRESHOLD}
               onEachFeature={(feature, layer) => {
                 layer.on('mouseover', () => layer.setStyle({ fillColor: '#ede9fe', fillOpacity: 0.6 }))
                 layer.on('mouseout', () => {
                   const opacity = currentZoomRef.current >= ZOOM_THRESHOLD ? 0 : 1
                   layer.setStyle({ fillColor: '#ffffff', fillOpacity: opacity })
                 })
+                flyToLayer(layer)
               }}
             />
           )}
           {departements && (
             <GeoJSON
-             data={departements}
-             style={{ color:'#6b46c1', weight: 1, dashArray: '3', fillColor: '#ffffff', fillOpacity: 0, opacity: departementsOpacity}}
+              data={departements}
+              style={{ color: '#6b46c1', weight: 1, dashArray: '3', fillColor: '#ffffff', fillOpacity: 0, opacity: departementsOpacity }}
+              interactive={currentZoom >= ZOOM_THRESHOLD}
+              onEachFeature={(feature, layer) => { flyToLayer(layer) }}
             />
           )}
-
           {cities.map(city => (
             <Marker
               key={city.id}
