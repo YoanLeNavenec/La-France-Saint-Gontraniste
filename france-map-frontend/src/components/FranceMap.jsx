@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { latLng, divIcon } from 'leaflet'
 import { MapContainer, GeoJSON, Marker, Tooltip } from 'react-leaflet'
 import './FranceMap.css'
+import { useMapEvents } from 'react-leaflet'
 
 const purpleIcon = divIcon({
   className: 'shield-marker',
@@ -21,20 +22,35 @@ const selectedIcon = divIcon({
   iconAnchor: [19, 38],
 })
 
+function ZoomWatcher({ onZoomChange }) {
+  useMapEvents({
+    zoomend: (e) => onZoomChange(e.target.getZoom()),
+  })
+  return null
+}
+
 function FranceMap() {
   const [cities, setCities] = useState([
-    { id: 1, position: [43.6047, 1.4442], oldName: 'Toulouse', newName: 'Saint-Gontan de la Rôse', lore: '', image: '' },
-    { id: 2, position: [45.7640, 4.8357], oldName: 'Lyon', newName: 'Saint-Gontran le Gastronome', lore: '', image: '' },
-    { id: 3, position: [47.0873, -1.2814], oldName: 'Clisson', newName: 'Saint-Ethis du Grand Métal', lore: '', image: '' },
+    { id: 1, position: [43.6047, 1.4442], oldName: 'Toulouse', newName: 'Saint-Gontan de la Rôse', lore: '', image: '', departement: '31', tier: 'prefecture' },
+    { id: 2, position: [45.7640, 4.8357], oldName: 'Lyon', newName: 'Saint-Gontran le Gastronome', lore: '', image: '', departement: '69', tier: 'prefecture' },
+    { id: 3, position: [47.0873, -1.2814], oldName: 'Clisson', newName: 'Saint-Ethis du Grand Métal', lore: '', image: '', departement: '44', tier:'small' },
+    { id: 4, position: [44.435, 2.515], oldName: 'Lieu_dit Montredon', newName:'Saint-Gontran sur Créneaux', lore: '', image: '', departement: '12', tier: 'small'},
   ])
 
   const [regions, setRegions] = useState(null)
+  const [departements, setDepartements] = useState(null)
   const [selectedCity, setSelectedCity] = useState(null)
 
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/regions-version-simplifiee.geojson')
       .then(res => res.json())
       .then(data => setRegions(data))
+  }, [])
+
+  useEffect(() => {
+  fetch('https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements-version-simplifiee.geojson')
+    .then(res => res.json())
+    .then(data => setDepartements(data))
   }, [])
 
   const franceBounds = [latLng(41.3, -5.0), latLng(51.1, 8.3)]
@@ -53,6 +69,14 @@ function FranceMap() {
               }}
             />
           )}
+
+          {departements && (
+            <GeoJSON
+             data={departements}
+             style={{ color:'#6b46c1', weight: 1, dashArray: '3', fillColor: '#ffffff', fillOpacity: 0}}
+            />
+          )}
+
           {cities.map(city => (
             <Marker
               key={city.id}
