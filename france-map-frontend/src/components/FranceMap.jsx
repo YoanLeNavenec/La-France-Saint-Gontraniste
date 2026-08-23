@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { latLng, divIcon } from 'leaflet'
 import { MapContainer, GeoJSON, Marker, Tooltip } from 'react-leaflet'
 import './FranceMap.css'
@@ -37,9 +37,15 @@ function FranceMap() {
     { id: 4, position: [44.435, 2.515], oldName: 'Lieu_dit Montredon', newName:'Saint-Gontran sur Créneaux', lore: '', image: '', departement: '12', tier: 'small'},
   ])
 
+  const ZOOM_THRESHOLD = 7.5
+  const [currentZoom, setCurrentZoom] = useState(6)
+  const currentZoomRef = useRef(6)
+  const regionBaseOpacity = currentZoom >= ZOOM_THRESHOLD ? 0 : 1
+  const departementsOpacity = currentZoom >= ZOOM_THRESHOLD ? 1 : 0
   const [regions, setRegions] = useState(null)
   const [departements, setDepartements] = useState(null)
   const [selectedCity, setSelectedCity] = useState(null)
+
 
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/regions-version-simplifiee.geojson')
@@ -58,22 +64,31 @@ function FranceMap() {
   return (
     <div className='map-page'>
       <div className='map-frame'>
+        <div style={{ position: 'absolute', top: 10, left: 10, background: '#fff', padding: '4px 8px', zIndex: 1000 }}>
+          zoom: {currentZoom}
+        </div>
         <MapContainer className='map-container' bounds={franceBounds} zoomSnap={0.1} minZoom={6} maxZoom={12} maxBounds={franceBounds}>
+          <ZoomWatcher onZoomChange={(zoom) => {
+            setCurrentZoom(zoom)
+            currentZoomRef.current = zoom
+          }}/>
           {regions && (
             <GeoJSON
               data={regions}
-              style={{ color: '#6b46c1', weight: 1, fillColor: '#ffffff', fillOpacity: 1 }}
+              style={{ color: '#6b46c1', weight: 1, fillColor: '#ffffff', fillOpacity: regionBaseOpacity }}
               onEachFeature={(feature, layer) => {
                 layer.on('mouseover', () => layer.setStyle({ fillColor: '#ede9fe', fillOpacity: 0.6 }))
-                layer.on('mouseout', () => layer.setStyle({ fillColor: '#ffffff', fillOpacity: 1 }))
+                layer.on('mouseout', () => {
+                  const opacity = currentZoomRef.current >= ZOOM_THRESHOLD ? 0 : 1
+                  layer.setStyle({ fillColor: '#ffffff', fillOpacity: opacity })
+                })
               }}
             />
           )}
-
           {departements && (
             <GeoJSON
              data={departements}
-             style={{ color:'#6b46c1', weight: 1, dashArray: '3', fillColor: '#ffffff', fillOpacity: 0}}
+             style={{ color:'#6b46c1', weight: 1, dashArray: '3', fillColor: '#ffffff', fillOpacity: 0, opacity: departementsOpacity}}
             />
           )}
 
