@@ -44,11 +44,11 @@ function FranceMap() {
   const ZOOM_THRESHOLD = 7.5
   const [currentZoom, setCurrentZoom] = useState(6)
   const currentZoomRef = useRef(6)
-  const regionBaseOpacity = currentZoom >= ZOOM_THRESHOLD ? 0 : 1
-  const departementsOpacity = currentZoom >= ZOOM_THRESHOLD ? 1 : 0
+  const isZoomedIn = currentZoom >= ZOOM_THRESHOLD
   const [regions, setRegions] = useState(null)
   const [departements, setDepartements] = useState(null)
   const [selectedCity, setSelectedCity] = useState(null)
+  const [activeDepartement, setActiveDepartement] = useState(null)
 
   const mapRef = useRef(null)
 
@@ -66,75 +66,81 @@ function FranceMap() {
 
   const franceBounds = [latLng(41.3, -5.0), latLng(51.1, 8.3)]
 
-  function flyToLayer(layer) {
+  function flyToLayer(layer, onClick) {
     layer.on('click', () => {
       mapRef.current.flyToBounds(layer.getBounds(), { padding: [20, 20], duration: 1, maxZoom: 9 })
+      if (onClick) onClick()
     })
   }
 
   return (
     <div className='map-page'>
-      <div className='map-frame'>
-        <div style={{ position: 'absolute', top: 10, left: 10, background: '#fff', padding: '4px 8px', zIndex: 1000 }}>
-          zoom: {currentZoom}
-        </div>
-        <MapContainer className='map-container' bounds={franceBounds} zoomSnap={0.1} minZoom={6} maxZoom={12} maxBounds={franceBounds}>
-          <ZoomWatcher
-            onZoomChange={(zoom) => {
-              setCurrentZoom(zoom)
-              currentZoomRef.current = zoom
-            }}
-            onMapReady={(map) => { mapRef.current = map }}
-          />
-          {regions && (
-            <GeoJSON
-              data={regions}
-              style={{ color: '#6b46c1', weight: 1, fillColor: '#ffffff', fillOpacity: regionBaseOpacity }}
-              interactive={currentZoom < ZOOM_THRESHOLD}
-              onEachFeature={(feature, layer) => {
-                layer.on('mouseover', () => layer.setStyle({ fillColor: '#ede9fe', fillOpacity: 0.6 }))
-                layer.on('mouseout', () => {
-                  const opacity = currentZoomRef.current >= ZOOM_THRESHOLD ? 0 : 1
-                  layer.setStyle({ fillColor: '#ffffff', fillOpacity: opacity })
-                })
-                flyToLayer(layer)
+      <h1 className='map-title'>Lorem ipsum dolor sit amet consectetur adipisicing elit.</h1>
+      <div className='map-document'>
+        <div className='map-frame'>
+          <MapContainer className='map-container' bounds={franceBounds} zoomSnap={0.1} minZoom={6} maxZoom={12} maxBounds={franceBounds}>
+            <ZoomWatcher
+              onZoomChange={(zoom) => {
+                setCurrentZoom(zoom)
+                currentZoomRef.current = zoom
               }}
+              onMapReady={(map) => { mapRef.current = map }}
             />
-          )}
-          {departements && (
-            <GeoJSON
-              data={departements}
-              style={{ color: '#6b46c1', weight: 1, dashArray: '3', fillColor: '#ffffff', fillOpacity: 0, opacity: departementsOpacity }}
-              interactive={currentZoom >= ZOOM_THRESHOLD}
-              onEachFeature={(feature, layer) => { flyToLayer(layer) }}
-            />
-          )}
-          {cities.map(city => (
-            <Marker
-              key={city.id}
-              position={city.position}
-              icon={selectedCity?.id === city.id ? selectedIcon : purpleIcon}
-              eventHandlers={{ click: () => setSelectedCity(city) }}
-            >
-              <Tooltip>{city.newName}</Tooltip>
-            </Marker>
-          ))}
-        </MapContainer>
-      </div>
-
-      <div className='info-panel'>
-        {selectedCity ? (
-          <div className='map-popup'>
-            <h3 className='popup-title'>{selectedCity.newName}</h3>
-            <p className='popup-subtitle'>Anciennement {selectedCity.oldName}</p>
-            {selectedCity.image && (
-              <img src={selectedCity.image} alt={selectedCity.newName} className='popup-image' />
+            {regions && (
+              <GeoJSON
+                key={`regions-${isZoomedIn}`}
+                data={regions}
+                style={{ color: '#6b46c1', weight: 1, fillColor: '#ead9b0', fillOpacity: isZoomedIn ? 0 : 1 }}
+                interactive={!isZoomedIn}
+                onEachFeature={(feature, layer) => {
+                  layer.on('mouseover', () => layer.setStyle({ fillColor: '#ede9fe', fillOpacity: 0.6 }))
+                  layer.on('mouseout', () => {
+                    const opacity = currentZoomRef.current >= ZOOM_THRESHOLD ? 0 : 1
+                    layer.setStyle({ fillColor: '#ead9b0', fillOpacity: opacity })
+                  })
+                  flyToLayer(layer, () => setActiveDepartement(null))
+                }}
+              />
             )}
-            <p>{selectedCity.lore}</p>
-          </div>
-        ) : (
-          <p className='info-placeholder'>Cliquez sur une ville pour voir son histoire.</p>
-        )}
+            {departements && (
+              <GeoJSON
+                key={`departements-${isZoomedIn}`}
+                data={departements}
+                style={{ color: '#6b46c1', weight: 1, dashArray: '3', fillColor: '#ffffff', fillOpacity: 0, opacity: isZoomedIn ? 1 : 0}}
+                interactive={isZoomedIn}
+                onEachFeature={(feature, layer) => { 
+                  flyToLayer(layer, () => setActiveDepartement(feature.properties.code)) }}
+              />
+            )}
+            {cities
+              .filter(city => city.tier === 'prefecture' || (isZoomedIn && city.departement === activeDepartement))
+              .map(city => (
+                <Marker
+                  key={city.id}
+                  position={city.position}
+                  icon={selectedCity?.id === city.id ? selectedIcon : purpleIcon}
+                  eventHandlers={{ click: () => setSelectedCity(city) }}
+                >
+                <Tooltip>{city.newName}</Tooltip>
+              </Marker>
+            ))}
+          </MapContainer>
+        </div>
+
+        <div className='info-panel'>
+          {selectedCity ? (
+            <div className='map-popup'>
+              <h3 className='popup-title'>{selectedCity.newName}</h3>
+              <p className='popup-subtitle'>Anciennement {selectedCity.oldName}</p>
+              {selectedCity.image && (
+                <img src={selectedCity.image} alt={selectedCity.newName} className='popup-image' />
+              )}
+              <p>{selectedCity.lore}</p>
+            </div>
+          ) : (
+            <p className='info-placeholder'>Cliquez sur une ville pour voir son histoire.</p>
+          )}
+        </div>
       </div>
     </div>
   )
