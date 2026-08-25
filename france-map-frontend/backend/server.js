@@ -6,6 +6,7 @@ const City = require('./models/City')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const Admin = require('./models/Admin')
+const requireAuth = require('./middleware/auth')
 
 const app = express()
 app.use(cors())
