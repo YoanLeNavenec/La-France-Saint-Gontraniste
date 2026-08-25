@@ -16,11 +16,19 @@ html, body, #root {
   width: 100%;
   height: 100vh;
   display: flex;
+  position: relative;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 24px;
-  background: radial-gradient(ellipse at center, #4a3222 0%, #241a12 100%);
+  background:
+  radial-gradient(circle at 25% 65%, rgba(15, 10, 6, 0.3) 0%, transparent 20%),
+  radial-gradient(circle at 75% 30%, rgba(15, 10, 6, 0.25) 0%, transparent 16%),
+  radial-gradient(ellipse at center, rgba(74, 50, 34, 0.4) 0%, rgba(36, 26, 18, 0.6) 100%),
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='wood'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.009 0.3' numOctaves='5' seed='7' result='noise'/%3E%3CfeColorMatrix in='noise' type='matrix' values='0 0 0 0 0.35 0 0 0 0 0.24 0 0 0 0 0.14 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23wood)'/%3E%3C/svg%3E"),
+  #241a12;
+  background-size: auto, auto, auto, 950px 950px, auto;
+  background-blend-mode: overlay, overlay, normal, normal, normal;
 }
 
 .map-title {
@@ -97,4 +105,26 @@ html, body, #root {
   border: 6px double #b8860b;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
   background: #ead9b0;
+}
+
+.hidden-login {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  color: #b8860b;
+  opacity: 0.55;
+  text-decoration: none;
+  display: block;
+}
+
+.hidden-login:hover {
+  opacity: 1;
+}
+
+.hidden-login svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }

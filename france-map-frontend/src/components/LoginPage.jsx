@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import './AdminPanel.css'
 
 function LoginPage() {
   const [username, setUsername] = useState('')
@@ -19,7 +20,7 @@ function LoginPage() {
       })
 
       if (!res.ok) {
-        setError('Invalid credentials')
+        setError('Identifiants invalides')
         return
       }
 
@@ -28,19 +29,32 @@ function LoginPage() {
       localStorage.setItem('refreshToken', data.refreshToken)
       navigate('/admin')
     } catch (err) {
-      setError('Something went wrong')
+      setError('Une erreur est survenue')
     }
   }
 
   return (
-    <div>
-      <h1>Admin Login</h1>
-      <form onSubmit={handleLogin}>
-        <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button type="submit">Log in</button>
-        {error && <p>{error}</p>}
-      </form>
+    <div className='admin-page'>
+      <h1 className='admin-title'>Connexion Administrateur</h1>
+      <div className='paper-sheet'>
+        <h2>Se connecter</h2>
+        <form onSubmit={handleLogin}>
+          <input
+            type="text"
+            placeholder="Nom d'utilisateur"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Mot de passe"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button type="submit" className='btn btn-primary'>Se connecter</button>
+          {error && <p className='login-error'>{error}</p>}
+        </form>
+      </div>
     </div>
   )
 }

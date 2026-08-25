@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { latLng, divIcon } from 'leaflet'
 import { MapContainer, GeoJSON, Marker, Tooltip, useMapEvents } from 'react-leaflet'
+import { Link } from 'react-router-dom'
 import './FranceMap.css'
 
 const purpleIcon = divIcon({
@@ -34,12 +35,13 @@ function ZoomWatcher({ onZoomChange, onMapReady }) {
 }
 
 function FranceMap() {
-  const [cities, setCities] = useState([
-    { id: 1, position: [43.6047, 1.4442], oldName: 'Toulouse', newName: 'Saint-Gontan de la Rôse', lore: '', image: '', departement: '31', tier: 'prefecture' },
-    { id: 2, position: [45.7640, 4.8357], oldName: 'Lyon', newName: 'Saint-Gontran le Gastronome', lore: '', image: '', departement: '69', tier: 'prefecture' },
-    { id: 3, position: [47.0873, -1.2814], oldName: 'Clisson', newName: 'Saint-Ethis du Grand Métal', lore: '', image: '', departement: '44', tier: 'small' },
-    { id: 4, position: [44.435, 2.515], oldName: 'Lieu_dit Montredon', newName: 'Saint-Gontran sur Créneaux', lore: '', image: '', departement: '12', tier: 'small' },
-  ])
+  const [cities, setCities] = useState(null)
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/cities')
+      .then(res => res.json())
+      .then(data => setCities(data))
+  }, [])
 
   const ZOOM_THRESHOLD = 7.5
   const [currentZoom, setCurrentZoom] = useState(6)
@@ -112,11 +114,11 @@ function FranceMap() {
                   flyToLayer(layer, () => setActiveDepartement(feature.properties.code)) }}
               />
             )}
-            {cities
+            {cities && cities
               .filter(city => city.tier === 'prefecture' || (isZoomedIn && city.departement === activeDepartement))
               .map(city => (
                 <Marker
-                  key={city.id}
+                  key={city._id}
                   position={city.position}
                   icon={selectedCity?.id === city.id ? selectedIcon : purpleIcon}
                   eventHandlers={{ click: () => setSelectedCity(city) }}
@@ -142,6 +144,14 @@ function FranceMap() {
           )}
         </div>
       </div>
+      <Link to='/login' className='hidden-login'>
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.6" />
+          <path d="M50,4 L59.9,40.1 L96,50 L59.9,59.9 L50,96 L40.1,59.9 L4,50 L40.1,40.1 Z" fill="currentColor" opacity="0.9" />
+          <path d="M50,40 L72.6,27.4 L60,50 L72.6,72.6 L50,60 L27.4,72.6 L40,50 L27.4,27.4 Z" fill="currentColor" opacity="0.6" />
+          <circle cx="50" cy="50" r="5" fill="currentColor" />
+        </svg>
+      </Link>
     </div>
   )
 }
