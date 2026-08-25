@@ -36,6 +36,23 @@ app.post('/api/login', async (req, res) => {
   res.json({ accessToken, refreshToken })
 })
 
+//using the refresh token to give a new auth token
+app.post('/api/refresh', (req, res) => {
+  const { refreshToken } = req.body
+
+  if (!refreshToken) {
+    return res.status(401).json({ error: 'No refresh token provided' })
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET)
+    const accessToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, { expiresIn: '15m' })
+    res.json({ accessToken })
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid or expired refresh token' })
+  }
+})
+
 //fetching cities
 app.get('/api/cities', async (req, res) => {
   try {
