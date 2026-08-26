@@ -12,7 +12,7 @@ const citySchema = new mongoose.Schema({
   departement: { type: String, required: true },
   tier: {
     type: String,
-    enum: ['prefecture', 'small'],
+    enum: ['region', 'small'],
     required: true,
   },
 })

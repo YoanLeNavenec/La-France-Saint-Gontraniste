@@ -5,21 +5,23 @@ import { Link } from 'react-router-dom'
 import './FranceMap.css'
 
 const purpleIcon = divIcon({
-  className: 'shield-marker',
-  html: `<svg width="32" height="32" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 2 L20 5 V11 C20 16 16.5 20 12 22 C7.5 20 4 16 4 11 V5 Z" fill="#7F2EDC" stroke="#fff" stroke-width="1.5"/>
+  className: 'city-marker',
+  html: `<svg width="22" height="30" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="#6b46c1"/>
+    <circle cx="12" cy="12" r="5" fill="#ffffff"/>
   </svg>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
+  iconSize: [22, 30],
+  iconAnchor: [11, 30],
 })
 
 const selectedIcon = divIcon({
-  className: 'shield-marker shield-marker-selected',
-  html: `<svg width="38" height="38" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 2 L20 5 V11 C20 16 16.5 20 12 22 C7.5 20 4 16 4 11 V5 Z" fill="#f6c945" stroke="#fff" stroke-width="1.5"/>
+  className: 'city-marker city-marker-selected',
+  html: `<svg width="26" height="35" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="#6b46c1" stroke="#ffffff" stroke-width="1.5"/>
+    <circle cx="12" cy="12" r="5" fill="#ffffff"/>
   </svg>`,
-  iconSize: [38, 38],
-  iconAnchor: [19, 38],
+  iconSize: [26, 35],
+  iconAnchor: [13, 35],
 })
 
 function ZoomWatcher({ onZoomChange, onMapReady }) {
@@ -38,7 +40,7 @@ function FranceMap() {
   const [cities, setCities] = useState(null)
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/cities')
+    fetch(`${import.meta.env.VITE_API_URL}/api/cities`)
       .then(res => res.json())
       .then(data => setCities(data))
   }, [])
@@ -77,7 +79,7 @@ function FranceMap() {
 
   return (
     <div className='map-page'>
-      <h1 className='map-title'>Lorem ipsum dolor sit amet consectetur adipisicing elit.</h1>
+      <h1 className='map-title'>La Fronce de Saint-Gontran</h1>
       <div className='map-document'>
         <div className='map-frame'>
           <MapContainer className='map-container' bounds={franceBounds} zoomSnap={0.1} minZoom={6} maxZoom={12} maxBounds={franceBounds}>
@@ -92,15 +94,14 @@ function FranceMap() {
               <GeoJSON
                 key={`regions-${isZoomedIn}`}
                 data={regions}
-                style={{ color: '#6b46c1', weight: 1, fillColor: '#ead9b0', fillOpacity: isZoomedIn ? 0 : 1 }}
-                interactive={!isZoomedIn}
+                style={{ color: '#475569', weight: 1, fillColor: isZoomedIn ? '#ffffff' : '#ffffff', fillOpacity: isZoomedIn ? 0 : 1 }}
                 onEachFeature={(feature, layer) => {
-                  layer.on('mouseover', () => layer.setStyle({ fillColor: '#ede9fe', fillOpacity: 0.6 }))
+                  layer.on('mouseover', () => layer.setStyle({ fillColor: '#e5e7eb', fillOpacity: 0.6 }))
                   layer.on('mouseout', () => {
                     const opacity = currentZoomRef.current >= ZOOM_THRESHOLD ? 0 : 1
-                    layer.setStyle({ fillColor: '#ead9b0', fillOpacity: opacity })
+                    layer.setStyle({ fillColor: '#ffffff', fillOpacity: opacity })
                   })
-                  flyToLayer(layer, () => setActiveDepartement(null))
+                  flyToLayer(layer)
                 }}
               />
             )}
@@ -108,14 +109,14 @@ function FranceMap() {
               <GeoJSON
                 key={`departements-${isZoomedIn}`}
                 data={departements}
-                style={{ color: '#6b46c1', weight: 1, dashArray: '3', fillColor: '#ffffff', fillOpacity: 0, opacity: isZoomedIn ? 1 : 0}}
+                style={{ color: '#475569', weight: 1, dashArray: '3', fillColor: '#ffffff', fillOpacity: 0, opacity: isZoomedIn ? 1 : 0 }}
                 interactive={isZoomedIn}
                 onEachFeature={(feature, layer) => { 
                   flyToLayer(layer, () => setActiveDepartement(feature.properties.code)) }}
               />
             )}
             {cities && cities
-              .filter(city => city.tier === 'prefecture' || (isZoomedIn && city.departement === activeDepartement))
+              .filter(city => city.tier === 'region' || (isZoomedIn && city.departement === activeDepartement))
               .map(city => (
                 <Marker
                   key={city._id}

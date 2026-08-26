@@ -8,7 +8,7 @@ async function authFetch(url, options = {}) {
 
   if (res.status === 401) {
     const refreshToken = localStorage.getItem('refreshToken')
-    const refreshRes = await fetch('http://localhost:5000/api/refresh', {
+    const refreshRes = await fetch(`${import.meta.env.VITE_API_URL}/api/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
